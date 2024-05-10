@@ -1,0 +1,114 @@
+\documentclass{CG2}
+
+\usepackage{epsfig}
+%Paket für deutsche Silbentrennung etc.
+\usepackage{ngerman}
+
+
+%Paket für Zeichenkodierung, entspricht UTF-8
+\usepackage[utf8x]{inputenc}
+
+%Paket das die Ausgabefonts definiert
+\usepackage[T1]{fontenc}
+%Paket für das Einbinden von Grafiken über die figure-Umgebung
+\usepackage{graphicx}
+
+
+
+%\usepackage{english}
+\usepackage{amsmath}
+\usepackage{nicefrac}
+%\usepackage{epstopdf}
+\def\CG_LOGO{\includegraphics[width=35mm]{logoth}}
+
+\usepackage{xcolor}
+\usepackage{fancyvrb}
+\usepackage{verbatim,moreverb}
+\definecolor{thmagenta}{cmyk}{0.3,0.95,0.0,0.0}
+\usepackage[most]{tcolorbox}
+
+\newcommand{\tldr}[2]{
+	\vspace{.3cm}
+	\begin{tcolorbox}[enhanced jigsaw,breakable,pad at break*=1mm,
+  	colback=thmagenta!5!white,colframe=thmagenta!80!black,title=\textsf{#1}]
+  	{\normalsize #2}
+	\end{tcolorbox}}{\par \bigskip}
+
+
+
+\SetCGPageDimensions
+
+
+\thispagestyle{empty}
+
+\Untertitel{Praktikumsorganisation}
+\Datum{17. April 2024}
+\Blatt{}
+\Abgabe{Praktikumsanmeldung bis spätestens 27.April 2024}
+
+%Paket zur Erzeugung von Hyperrefs und PDF Informationen
+\usepackage{hyperref}
+%Farben für Links
+%Farbige Ränder bei false und farbige Texte bei true
+\hypersetup{colorlinks=true,citecolor=black,filecolor=black,linkcolor=black,urlcolor=black}
+
+
+\begin{document}
+\Header
+
+\Aufgabe{Allgemeines}
+In diesem Sommersemester werden Sie sich im Praktikum mit dem Aufbau einer Rendering Pipeline befassen. 
+Hierzu werden im Folgenden die wichtigsten Informationen zusammengefasst.
+
+\Aufgabe{Anmeldung zum Praktikum}
+Das Praktikum wird auch in diesem Modul über das Praktikumstool (\url{https://praktikum.gm.fh-koeln.de}) organisiert. 
+Melden Sie sich dort unbedingt bis zum \textbf{27.04.2024} für das Praktikum an. 
+Spätestens am darauffolgenden Dienstag werden Sie einer Praktikumsgruppe zugewiesen und finden dort die jeweiligen Deadlines für die Aufgaben sowie die möglichen Beratungstermine.
+
+
+\Aufgabe{Ablauf}
+Die wichtigsten Daten im Praktikumstool sind die Ihnen zugewiesenen Deadlines für die Aufgaben. Bis zu diesem Datum müssen Sie die Abnahme der Aufgabe spätestens erfolgreich bestanden haben.
+ 
+Insgesamt umfasst das Praktikum die folgenden vier Themenkomplexe:
+\begin{enumerate}
+	\item \textbf{Geometry} \hfill\\\textit{Schlüsselbegriffe:} Geometrie, VAO, VBO, IBO
+	\item \textbf{Transformations} \hfill\\\textit{Schlüsselbegriffe:} Translation, Rotation, Skalierung, Kamera
+	\item \textbf{Texture} \hfill\\\textit{Schlüsselbegriff:} Textur
+	\item \textbf{Lights} \hfill\\\textit{Schlüsselbegriffe:} Beleuchtungsmodell Phong
+\end{enumerate}
+
+Die Aufgaben werden immer zeitnah über ILU bereitgestellt. Sie können, und wir möchten es Ihnen auch nahelegen, die Abgabe auch schon früher durchführen. Warten Sie nicht bis zur letzten Minute!
+
+
+
+\Aufgabe{Abnahmen}
+Die Abnahmen erfolgen im \textbf{CGA-Raum (R. 3.204)} am Campus Gummersbach. Sie finden den Raum in der 3. Etage auf der Seite des Fahrstuhls.
+
+Für die Abnahmen sollten Sie \textbf{vorbereitet sein} und der Programm-Code sollte \textbf{fehlerfrei ausführbar} sein. Sollten Probleme auftreten, nutzen Sie bitte die
+Beratungstermine.  
+
+\Aufgabe{Beratung} 
+Die Beratungstermine sind eine Möglichkeit für Sie Verständnisprobleme zu klären oder auch Programmierfehler zu lösen. Sollten Sie an einem der Beratungstermine abgeben wollen und Ihr Programm-Code funktioniert nicht oder wir stellen fest, dass Sie nicht vorbereitet sind, so haben Sie an einem der folgenden Termine bis zur jeweiligen Deadline die Möglichkeit erneut eine Abgabe zu tätigen.
+
+
+\Aufgabe{Kommunikation}
+Die hauptsächliche Kommunikation und die Bereitstellung von Informationen wird über den Kurs im ILU (\url{https://ilu.th-koeln.de/goto.php?target=crs_276944&client_id=thkilu}) erfolgen. Bei Problemen kontaktieren Sie uns bitte per E-Mail an \textbf{\href{mailto:cga-praktikum@gm.fh-koeln.de}{cga-praktikum@gm.fh-koeln.de}}. Helfen Sie uns, indem Sie einen passenden Betreff wählen, Ihre GMID hinzufügen und evtl. Screenshots zum Problem sowie eine passende Beschreibung Ihres Problems anfügen!
+
+
+
+\vspace{1cm}
+\centering
+\LARGE Viel Erfolg und Spaß im Praktikum. 
+
+\vspace{2cm}
+\tldr{tl;dr}{\begin{description}
+	\item[Anzahl Abnahmen:] 4
+	\item[Kurslink (ILU):] \url{https://ilu.th-koeln.de/goto.php?target=crs_276944&client_id=thkilu}
+	\item[Praktikumstool:] \url{https://praktikum.gm.fh-koeln.de}
+	\item[E-Mail:] \href{mailto:cga-praktikum@gm.fh-koeln.de}{cga-praktikum@gm.fh-koeln.de}
+\end{description}
+}
+
+
+\end{document}
+
