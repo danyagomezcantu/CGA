@@ -80,7 +80,7 @@ class Scene(private val window: GameWindow) {
         // ---------------------------------------------
 
         // Load an object and create a mesh
-        val res = loadOBJ("C:\\Users\\Danya\\Downloads\\Computergrafik und Animation\\assignment1\\Code\\assets\\models\\sphere.obj", true, true)
+        val res = loadOBJ("assets\\models\\sphere.obj", true, true)
 
         // Get the first mesh of the first object
         val objMesh = res.objects[0].meshes[0]
