@@ -8,6 +8,7 @@ import org.lwjgl.opengl.GL30
 import java.nio.FloatBuffer
 import java.nio.file.Files
 import java.nio.file.Paths
+import org.joml.Matrix4f
 
 /**
  * Created by Fabian on 16.09.2017.
@@ -40,7 +41,9 @@ class ShaderProgram(vertexShaderPath: String, fragmentShaderPath: String) {
      * @param value Value
      * @return returns false if the uniform was not found in the shader
      */
-    fun setUniform(name: String, value: Float): Boolean {
+    /* Old setUniform
+
+        fun setUniform(name: String, value: Float): Boolean {
         if (programID == 0) return false
         val loc = GL20.glGetUniformLocation(programID, name)
         if (loc != -1) {
@@ -49,8 +52,24 @@ class ShaderProgram(vertexShaderPath: String, fragmentShaderPath: String) {
         }
         return false
     }
+    */
 
     // different setUniform() functions are added later during the course
+    // New setUniform
+
+    fun setUniform(name: String, value: Matrix4f): Boolean {
+        if (programID == 0) return false
+        val loc = GL20.glGetUniformLocation(programID, name)
+        if (loc != -1) {
+            value.get(m4x4buf)
+            GL20.glUniformMatrix4fv(loc, false, m4x4buf)
+            return true
+        }
+        return false
+    }
+
+
+
 
     /**
      * Creates a shader object from vertex and fragment shader paths

@@ -1,17 +1,15 @@
 #version 330 core
 
-//input from vertex shader
-in struct VertexData
-{
-    vec3 color;
-} vertexData;
-
-//fragment shader output
+in vec3 pass_Color;
 out vec4 color;
 
+/*
+pass_Color: helps pass data from the vertex shader to the fragment shader. It is defined as an out variable in the vertex shader, which means it outputs data that will be interpolated across the surface of the polygon and passed to the fragment shader for each fragment (or pixel) that needs to be drawn.
+
+https://stackoverflow.com/questions/18253785/
+https://stackoverflow.com/questions/29880638/
+*/
+
 void main(){
-    // TODO This is currently only a color passthrough to the screen. For tasks 2.1.3 and 2.4.2 you have to implement a
-    //      meaningful visualization of the surface normals. Think about how to map the coordinates of the normal vectors
-    //      to RGB values and how you're going to handle negative coordinates.
-    color = vec4(vertexData.color, 1.0f);
+    color = vec4(normalize(abs(pass_Color)), 1.0);
 }
