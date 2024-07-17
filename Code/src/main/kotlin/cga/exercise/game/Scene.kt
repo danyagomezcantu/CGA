@@ -1,132 +1,132 @@
 package cga.exercise.game
 
+import cga.exercise.components.camera.TronCamera
 import cga.exercise.components.geometry.Mesh
+import cga.exercise.components.geometry.Renderable
 import cga.exercise.components.geometry.VertexAttribute
+import cga.exercise.components.light.PointLight
 import cga.exercise.components.shader.ShaderProgram
-import cga.framework.GLError
-import cga.framework.GameWindow
+import cga.exercise.components.texture.Texture2D
+import cga.exercise.components.geometry.Material
 import cga.framework.OBJLoader.loadOBJ
+import cga.framework.GameWindow
+import org.joml.Vector2f
+import org.joml.Vector3f
+import org.lwjgl.glfw.GLFW.*
 import org.lwjgl.opengl.GL11.*
+import cga.framework.ModelLoader.loadModel
+import org.joml.Vector3i
+import org.lwjgl.opengl.GL43.*
+import org.lwjgl.opengl.GLDebugMessageCallback
+import org.lwjgl.system.MemoryUtil.NULL
 
-
-/**
- * Created by Fabian on 16.09.2017.
- */
 class Scene(private val window: GameWindow) {
-    private val staticShader: ShaderProgram = ShaderProgram("assets/shaders/simple_vert.glsl", "assets/shaders/simple_frag.glsl")
+    private val staticShader: ShaderProgram = ShaderProgram("assets/shaders/tron_vert.glsl", "assets/shaders/tron_frag.glsl")
+    private lateinit var ground: Renderable
+    private val bike: Renderable?
+    private lateinit var camera: TronCamera
 
-    private lateinit var mesh1: Mesh  // Mesh now properly initialized
-    private lateinit var mesh2: Mesh  // This is another Mesh we'll use for our Initials
-    private lateinit var mesh3: Mesh  // This one is for the sphere
+    // Add Point Light
+    private val pointLight = PointLight(Vector3f(0f, 1f, 0f), Vector3i(255, 255, 255))
 
-    //scene setup
     init {
-        val vertices1 = floatArrayOf(
-            -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f,  // Bottom left blue
-            0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f,  // Bottom right blue
-            0.5f,  0.5f, 0.0f, 0.0f, 1.0f, 0.0f,  // Top right green
-            0.0f,  1.0f, 0.0f, 1.0f, 0.0f, 0.0f,  // Tip top red
-            -0.5f,  0.5f, 0.0f, 0.0f, 1.0f, 0.0f   // Top left green
-        )
+        setupDebugOutput()
 
-        val indices1 = intArrayOf(
-            0, 1, 2,  // Main triangle base
-            0, 2, 4,  // Left side
-            2, 3, 4   // Roof
-        )
-
-        val attributes1 = arrayOf(
-            VertexAttribute(3, GL_FLOAT, 24, 0L),   // Position attribute
-            VertexAttribute(3, GL_FLOAT, 24, 12L)   // Color attribute
-        )
-
-        // Mesh initialization using provided vertices, indices, and attributes
-        mesh1 = Mesh(vertices1, indices1, attributes1)
-
-        // ---------------------------------------------
-
-        val vertices2 = floatArrayOf(
-            -0.75f, 0.25f, 0.0f, 0.0f, 0.0f, 1.0f,
-            -0.75f, -0.25f, 0.0f, 0.0f, 0.0f, 1.0f,
-            -0.5f,  -0.25f, 0.0f, 0.0f, 0.0f, 1.0f,
-            -0.25f,  0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-            -0.5f,  0.25f, 0.0f, 0.0f, 0.0f, 1.0f,
-            0.25f, 0.25f, 0.0f, 0.0f, 0.0f, 1.0f,
-            0.25f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-            0.25f,  -0.25f, 0.0f, 0.0f, 0.0f, 1.0f,
-            0.75f,  -0.25f, 0.0f, 0.0f, 0.0f, 1.0f,
-            0.75f,  0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-            0.75f,  0.25f, 0.0f, 0.0f, 0.0f, 1.0f,
-            0.5f,  0.0f, 0.0f, 0.0f, 0.0f, 1.0f
-        )
-
-        val indices2 = intArrayOf(
-            0, 1, 4,
-            1, 3, 4,
-            1, 2, 3,
-            5, 6, 10,
-            6, 7, 8,
-            8, 9, 11
-        )
-
-        val attributes2 = arrayOf(
-            VertexAttribute(3, GL_FLOAT, 24, 0L),   // Position attribute
-            VertexAttribute(3, GL_FLOAT, 24, 12L)   // Color attribute
-        )
-
-        // Mesh initialization using provided vertices, indices, and attributes
-        mesh2 = Mesh(vertices2, indices2, attributes2)
-
-        // ---------------------------------------------
-
-        // Load an object and create a mesh
-        val res = loadOBJ("assets\\models\\sphere.obj", true, true)
-
-        // Get the first mesh of the first object
-        val objMesh = res.objects[0].meshes[0]
-
-        // Create the mesh
-
+        // Initialize the ground mesh
+        val resGround = loadOBJ("assets/models/ground.obj", true, false)
+        val objMesh0 = resGround.objects[0].meshes[0]
         val stride = 8 * 4
-
-        val attributes3 = arrayOf(
+        val attributes = arrayOf(
             VertexAttribute(3, GL_FLOAT, stride, 0), // position attribute
             VertexAttribute(2, GL_FLOAT, stride, 12), // texture attribute
             VertexAttribute(3, GL_FLOAT, stride, 20) // normalization attribute
         )
+        val groundMesh = Mesh(objMesh0.vertexData, objMesh0.indexData, attributes)
 
-        mesh3 = Mesh(objMesh.vertexData, objMesh.indexData, attributes3)
+        // Load textures
+        val groundDiffuse = Texture2D("assets/textures/ground_diff.png", true)
+        val groundEmit = Texture2D("assets/textures/ground_emit.png", true)
+        val groundSpecular = Texture2D("assets/textures/ground_spec.png", true)
 
-        // ---------------------------------------------
+        // Create material
+        val groundMaterial =
+            Material(groundDiffuse, groundEmit, groundSpecular, shininess = 0.0f, Vector2f(64.0f, 64.0f))
+        ground = Renderable(mutableListOf(groundMesh), groundMaterial)
 
-        // Set initial OpenGL state
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f)
-        GLError.checkThrow()
+        // Setup initial OpenGL state
+        setupOpenGL()
 
-        // Enable backface culling to improve performance
-        glEnable(GL_CULL_FACE) // Enable culling
-        glCullFace(GL_BACK)    // Culling back faces
-        glFrontFace(GL_CCW)    // Counterclockwise
+        // Initialize camera
+        camera = TronCamera()
+        camera.translate(Vector3f(0.0f, 2.0f, 4.0f))
+        camera.rotate(Math.toRadians(-35.0).toFloat(), 0f, 0f)
+
+        // Load motorcycle with ModelLoader load
+        bike = loadModel("assets/Light Cycle/Light Cycle/HQ_Movie cycle.obj", Math.toRadians(180.0).toFloat(), Math.toRadians(90.0).toFloat(), Math.toRadians(-90.0).toFloat())
+        bike?.scale(Vector3f(0.8f, 0.8f, 0.8f))
+
+        // Set bike as camera parent
+        camera.parent = bike
     }
 
     fun render(dt: Float, t: Float) {
-        glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT) // Clear the frame buffer
-        staticShader.use() // Use the static shader program
-        // mesh1.render()
-        // mesh2.render()
-        mesh3.render()
+        glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
+        staticShader.use()
+        camera.bind(staticShader)
+
+        pointLight.bind(staticShader, "pointLight")
+
+        // Set light and material uniforms
+        staticShader.setUniform("numPointLights", 1)
+        staticShader.setUniform("pointLight[0].Position", pointLight.getPosition())
+        staticShader.setUniform("tcMultiplier", Vector2f(1.0f, 1.0f))
+
+        println("Rendering ground")
+        ground.render(staticShader)
+        println("Rendering bike")
+        bike?.render(staticShader)
     }
 
-    fun update(dt: Float, t: Float) {}
+    private fun setupOpenGL() {
+        glClearColor(1.0f, 0.0f, 0.0f, 1.0f) // Changed background color for debugging
+        glEnable(GL_CULL_FACE)
+        glEnable(GL_DEPTH_TEST)
+        glCullFace(GL_BACK)
+        glFrontFace(GL_CCW)
+        glDepthFunc(GL_LESS)
+    }
+
+    private fun setupDebugOutput() {
+        glEnable(GL_DEBUG_OUTPUT)
+        glDebugMessageCallback(GLDebugMessageCallback.create { source, type, id, severity, length, message, userParam ->
+            println("GL Debug Message: ${GLDebugMessageCallback.getMessage(length, message)}")
+        }, NULL)
+    }
+
+    fun update(dt: Float, t: Float) {
+        // Handle key events to update scene
+        if (window.getKeyState(GLFW_KEY_W)) {
+            bike?.translate(Vector3f(0f, 0f, -10 * dt))
+        }
+        if (window.getKeyState(GLFW_KEY_S)) {
+            bike?.translate(Vector3f(0f, 0f, 10 * dt))
+        }
+        if (window.getKeyState(GLFW_KEY_A)) {
+            bike?.rotate(0f, Math.toRadians(45.0).toFloat() * dt, 0f)
+            bike?.translate(Vector3f(0f, 0f, -5 * dt))
+        }
+        if (window.getKeyState(GLFW_KEY_D)) {
+            bike?.rotate(0f, Math.toRadians(-45.0).toFloat() * dt, 0f)
+            bike?.translate(Vector3f(0f, 0f, -5 * dt))
+        }
+    }
 
     fun onKey(key: Int, scancode: Int, action: Int, mode: Int) {}
 
     fun onMouseMove(xpos: Double, ypos: Double) {}
 
     fun cleanup() {
-        // mesh1.cleanup()
-        // mesh2.cleanup()
-        mesh3.cleanup() // Clean up the mesh resources
-        staticShader.cleanup() // Clean up the shader resources
+        ground.cleanup()
+        staticShader.cleanup()
     }
 }

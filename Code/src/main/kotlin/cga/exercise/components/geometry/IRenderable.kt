@@ -5,3 +5,4 @@ import cga.exercise.components.shader.ShaderProgram
 interface IRenderable {
     fun render(shaderProgram: ShaderProgram)
 }
+
