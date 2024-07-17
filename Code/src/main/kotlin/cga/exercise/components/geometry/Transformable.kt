@@ -41,7 +41,7 @@ open class Transformable(private var modelMatrix: Matrix4f = Matrix4f(), var par
      * @param altMidpoint rotation center
      */
     fun rotateAroundPoint(pitch: Float, yaw: Float, roll: Float, altMidpoint: Vector3f) {
-        var tmp = Matrix4f()
+        val tmp = Matrix4f()
         tmp.translate(altMidpoint)
         tmp.rotateXYZ(pitch, yaw, roll)
         tmp.translate(Vector3f(altMidpoint).negate())
@@ -63,6 +63,14 @@ open class Transformable(private var modelMatrix: Matrix4f = Matrix4f(), var par
      */
     fun preTranslate(deltaPos: Vector3f) {
         modelMatrix.translateLocal(deltaPos)
+    }
+
+    /**
+     * Translates object based on its own coordinate system.
+     * @param deltaPos delta positions
+     */
+    fun translateLocal(deltaPos: Vector3f) {
+        modelMatrix.translate(deltaPos)
     }
 
     /**
