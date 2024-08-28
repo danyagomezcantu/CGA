@@ -33,7 +33,10 @@ object OBJLoader {
             scanner.useLocale(Locale.US)
             val cache = DataCache()
             while (scanner.hasNext()) {
-                if (scanner.hasNext("o") || scanner.hasNext("v") || scanner.hasNext("vt") || scanner.hasNext("vn") || scanner.hasNext("g") || scanner.hasNext("f")) {
+                if (scanner.hasNext("o") || scanner.hasNext("v") || scanner.hasNext("vt") || scanner.hasNext("vn") || scanner.hasNext(
+                        "g"
+                    ) || scanner.hasNext("f")
+                ) {
                     result.objects.add(parseObject(cache, scanner))
                 } else {
                     scanner.nextLine()
@@ -110,7 +113,8 @@ object OBJLoader {
             if (!scanner.hasNext()) throw OBJException("Error parsing Object.")
             if (scanner.hasNext("o")) {
                 command = scanner.next()
-                if (scanner.hasNextLine()) obj.name = scanner.nextLine().trim { it <= ' ' } else throw OBJException("Error parsing object name.")
+                if (scanner.hasNextLine()) obj.name =
+                    scanner.nextLine().trim { it <= ' ' } else throw OBJException("Error parsing object name.")
             } else {
                 obj.name = "UNNAMED"
             }
@@ -283,17 +287,20 @@ object OBJLoader {
             for (i in vdefs.indices) {
                 val vert = Vertex()
                 if (vdefs[i].p_defined) {
-                    if (vdefs[i].p_idx < cache.positions.size) vert.position = Vector3f(cache.positions[vdefs[i].p_idx]) else throw OBJException("Missing position in object definition")
+                    if (vdefs[i].p_idx < cache.positions.size) vert.position =
+                        Vector3f(cache.positions[vdefs[i].p_idx]) else throw OBJException("Missing position in object definition")
                 } else {
                     hasverts = false
                 }
                 if (vdefs[i].uv_defined) {
-                    if (vdefs[i].uv_idx < cache.uvs.size) vert.uv = Vector2f(cache.uvs[vdefs[i].uv_idx]) else throw OBJException("Missing texture coordinate in object definition")
+                    if (vdefs[i].uv_idx < cache.uvs.size) vert.uv =
+                        Vector2f(cache.uvs[vdefs[i].uv_idx]) else throw OBJException("Missing texture coordinate in object definition")
                 } else {
                     hasuvs = false
                 }
                 if (vdefs[i].n_defined) {
-                    if (vdefs[i].n_idx < cache.normals.size) vert.normal = Vector3f(cache.normals[vdefs[i].n_idx]) else throw OBJException("Missing normal in object definition")
+                    if (vdefs[i].n_idx < cache.normals.size) vert.normal =
+                        Vector3f(cache.normals[vdefs[i].n_idx]) else throw OBJException("Missing normal in object definition")
                 } else {
                     hasnormals = false
                 }
@@ -321,9 +328,11 @@ object OBJLoader {
             normal = Vector3f(0.0f, 0.0f, 0.0f)
         }
 
-        constructor(position: Vector3f,
-                    uv: Vector2f,
-                    normal: Vector3f) {
+        constructor(
+            position: Vector3f,
+            uv: Vector2f,
+            normal: Vector3f
+        ) {
             this.position = position
             this.uv = uv
             this.normal = normal

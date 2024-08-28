@@ -4,27 +4,57 @@ import org.joml.*
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
 import org.lwjgl.opengl.GL20
+import org.lwjgl.opengl.GL30
 import java.nio.FloatBuffer
 import java.nio.file.Files
 import java.nio.file.Paths
 
+/**
+ * Created by Fabian on 16.09.2017.
+ */
 class ShaderProgram(vertexShaderPath: String, fragmentShaderPath: String) {
-    private val uniformLocationCache = HashMap<String, Int>()
     private var programID: Int = 0
+    //Matrix buffers for setting matrix uniforms. Prevents allocation for each uniform
     private val m4x4buf: FloatBuffer = BufferUtils.createFloatBuffer(16)
 
+    /**
+     * Sets the active shader program of the OpenGL render pipeline to this shader
+     * if this isn't already the currently active shader
+     */
     fun use() {
         val curprog = GL11.glGetInteger(GL20.GL_CURRENT_PROGRAM)
         if (curprog != programID) GL20.glUseProgram(programID)
     }
 
+    /**
+     * Frees the allocated OpenGL objects
+     */
     fun cleanup() {
         GL20.glDeleteProgram(programID)
     }
 
+    // ------------------------ float vector uniforms -------------------------
+    fun setUniform(name : String, value : Int){
+        // location der uniformvariable im shader Programm
+        val loc = GL20.glGetUniformLocation(programID, name)
+        // texture unit als int hochladen
+        GL20.glUniform1i(loc,value)
+    }
+
+    fun setUniform(name: String, value: Vector3f) {
+        val loc = GL20.glGetUniformLocation(programID, name)
+        GL20.glUniform3f(loc, value.x, value.y, value.z)
+    }
+
+    /**
+     * Sets a single float uniform
+     * @param name  Name of the uniform variable in the shader
+     * @param value Value
+     * @return returns false if the uniform was not found in the shader
+     */
     fun setUniform(name: String, value: Float): Boolean {
         if (programID == 0) return false
-        val loc = getUniformLocation(programID, name)
+        val loc = GL20.glGetUniformLocation(programID, name)
         if (loc != -1) {
             GL20.glUniform1f(loc, value)
             return true
@@ -34,7 +64,7 @@ class ShaderProgram(vertexShaderPath: String, fragmentShaderPath: String) {
 
     fun setUniform(name: String, value: Vector2f): Boolean {
         if (programID == 0) return false
-        val loc = getUniformLocation(programID, name)
+        val loc = GL20.glGetUniformLocation(programID, name)
         if (loc != -1) {
             GL20.glUniform2f(loc, value.x, value.y)
             return true
@@ -42,47 +72,24 @@ class ShaderProgram(vertexShaderPath: String, fragmentShaderPath: String) {
         return false
     }
 
-    fun setUniform(name: String, value: Vector3f): Boolean {
-        if (programID == 0) return false
-        val loc = getUniformLocation(programID, name)
-        if (loc != -1) {
-            GL20.glUniform3f(loc, value.x, value.y, value.z)
-            return true
-        }
-        return false
+    // different setUniform() functions are added later during the course
+
+    fun setUniform(name: String, value: Matrix4f, transpose: Boolean){
+        val loc = GL20.glGetUniformLocation(programID, name) // location der Uniformvariable im Shader
+        value.get(m4x4buf) // matrix -> floatBuffer
+
+        GL20.glUniformMatrix4fv(loc, transpose, m4x4buf) // setzt Uniformvariable
+
     }
 
-    fun setUniform(name: String, value: Vector3i): Boolean {
-        if (programID == 0) return false
-        val loc = getUniformLocation(programID, name)
-        if (loc != -1) {
-            GL20.glUniform3i(loc, value.x, value.y, value.z)
-            return true
-        }
-        return false
-    }
 
-    fun setUniform(name: String, value: Int): Boolean {
-        if (programID == 0) return false
-        val loc = getUniformLocation(programID, name)
-        if (loc != -1) {
-            GL20.glUniform1i(loc, value)
-            return true
-        }
-        return false
-    }
 
-    fun setUniform(name: String, value: Matrix4f): Boolean {
-        if (programID == 0) return false
-        val loc = getUniformLocation(programID, name)
-        if (loc != -1) {
-            value.get(m4x4buf)
-            GL20.glUniformMatrix4fv(loc, false, m4x4buf)
-            return true
-        }
-        return false
-    }
-
+    /**
+     * Creates a shader object from vertex and fragment shader paths
+     * @param vertexShaderPath      vertex shader path
+     * @param fragmentShaderPath    fragment shader path
+     * @throws Exception if shader compilation failed, an exception is thrown
+     */
     init {
         val vPath = Paths.get(vertexShaderPath)
         val fPath = Paths.get(fragmentShaderPath)
@@ -100,7 +107,6 @@ class ShaderProgram(vertexShaderPath: String, fragmentShaderPath: String) {
         GL20.glCompileShader(vShader)
         if (GL20.glGetShaderi(vShader, GL20.GL_COMPILE_STATUS) == GL11.GL_FALSE) {
             val log = GL20.glGetShaderInfoLog(vShader)
-            println("Vertex shader compilation log: $log")
             GL20.glDeleteShader(fShader)
             GL20.glDeleteShader(vShader)
             throw Exception("Vertex shader compilation failed:\n$log")
@@ -108,7 +114,6 @@ class ShaderProgram(vertexShaderPath: String, fragmentShaderPath: String) {
         GL20.glCompileShader(fShader)
         if (GL20.glGetShaderi(fShader, GL20.GL_COMPILE_STATUS) == GL11.GL_FALSE) {
             val log = GL20.glGetShaderInfoLog(fShader)
-            println("Fragment shader compilation log: $log")
             GL20.glDeleteShader(fShader)
             GL20.glDeleteShader(vShader)
             throw Exception("Fragment shader compilation failed:\n$log")
@@ -124,7 +129,6 @@ class ShaderProgram(vertexShaderPath: String, fragmentShaderPath: String) {
         GL20.glLinkProgram(programID)
         if (GL20.glGetProgrami(programID, GL20.GL_LINK_STATUS) == GL11.GL_FALSE) {
             val log = GL20.glGetProgramInfoLog(programID)
-            println("Shader program linking log: $log")
             GL20.glDetachShader(programID, vShader)
             GL20.glDetachShader(programID, fShader)
             GL20.glDeleteShader(vShader)
@@ -135,16 +139,5 @@ class ShaderProgram(vertexShaderPath: String, fragmentShaderPath: String) {
         GL20.glDetachShader(programID, fShader)
         GL20.glDeleteShader(vShader)
         GL20.glDeleteShader(fShader)
-    }
-
-    private fun getUniformLocation(programID: Int, name: String): Int {
-        if (uniformLocationCache.containsKey(name))
-            return uniformLocationCache[name] as Int
-        else {
-            val loc = GL20.glGetUniformLocation(programID, name)
-            if (loc != -1)
-                uniformLocationCache[name] = loc
-            return loc
-        }
     }
 }

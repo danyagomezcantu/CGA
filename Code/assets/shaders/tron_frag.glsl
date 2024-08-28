@@ -1,101 +1,111 @@
 #version 330 core
-const int maxPointlights = 64;
-const int maxSpotlights = 64;
+#define NUMBER_OF_POINT_LIGHTS 5
 
-uniform float shininess;
-uniform sampler2D emitTex;
-uniform vec3 emitColor;
-uniform sampler2D diffTex;
-uniform sampler2D specTex;
+/* IN */
 
-out vec4 color;
-in vec3 toLight;
-in vec3 toSpotLight;
-in vec3 toCamera;
-in vec3 viewSpotLightDirection;
-in mat4 inverseTransposeViewMatrixToFragment;
-
-// input from vertex shader
+// Input from vertex shader
 in struct VertexData {
     vec3 position;
-    vec2 textureCoord;
+    vec2 texCoord;
     vec3 normal;
-    vec4 testPos;
 } vertexData;
 
-struct Pointlight {
-    vec3 Position;
-    vec3 Color;
+//sampler für einzelne Texturen als uniform
+uniform sampler2D diffTex;
+uniform sampler2D emitTex;
+uniform sampler2D specTex;
 
-    float ConstantAttenuation;
-    float LinearAttenuation;
-    float QuadraticAttenuation;
+uniform float shininess;
+uniform vec3 emitColor;
+
+in struct PointLight {
+    vec3 position;
+    vec3 color;
+    vec3 attenuation;
 };
-uniform int numPointlights;
-uniform Pointlight pointlight[maxPointlights];
+uniform PointLight pointLights[NUMBER_OF_POINT_LIGHTS];
 
-struct Spotlight {
-    vec3 Position;
-    vec3 Color;
-    vec3 Direction;
-    float InnerCone;
-    float OuterCone;
+// SPOTLIGHT
+uniform vec3 spotLightColor;
+uniform vec3 spotLightDirection;
+uniform float spotLightInnerCone;
+uniform float spotLightOuterCone;
 
-    float ConstantAttenuation;
-    float LinearAttenuation;
-    float QuadraticAttenuation;
-};
-uniform int numSpotlights;
-uniform Spotlight spotlight[maxSpotlights];
+in vec3 toPointLights[NUMBER_OF_POINT_LIGHTS];
+in vec3 toCamera;
+in vec3 toSpotLight;
+
+float compression_factor = 2.7f;
+
+/* OUT */
+
+out vec4 color;
+
+vec3 gamma(vec3 C_linear) {
+    return pow(C_linear.rgb, vec3(1.0/compression_factor));
+}
+
+vec3 invgamma(vec3 C_gamma) {
+    return pow(C_gamma.rgb, vec3(compression_factor));
+}
+
+float attenuation(vec3 toLight) {
+    //Distanz zu den Lichtquellen erhält man implizit durch die Länge der toLight Vektoren vom Vertexshader
+    float distance = length(toLight);
+    return 1.0f / (distance * distance);
+}
+
+float getCosAngle(vec3 normalizedVector1, vec3 normalizedVector2) {
+    return max(0.0f, dot(normalizedVector1, normalizedVector2));
+}
+
+float getCosAngleK(float cosAngle) {
+    return pow(cosAngle, shininess);
+}
+
+//Phong Beleuchtungsfunktion
+vec3 brdf(vec3 diffTerm, vec3 specTerm, float cosAlpha, float cosBetaK, vec3 lightColor, vec3 toLight) {
+    return (diffTerm * cosAlpha + specTerm * cosBetaK) * lightColor * attenuation(toLight);
+}
 
 void main() {
-    vec3 normalizedToCamera = normalize(toCamera);
+
+    vec3 diffTerm = invgamma(texture(diffTex, vertexData.texCoord).rgb);
+    vec3 specTerm = invgamma(texture(specTex, vertexData.texCoord).rgb);
+
     vec3 normalizedNormal = normalize(vertexData.normal);
+    vec3 normalizedToCamera = normalize(toCamera);
 
-    vec3 finalDiff = vec3(0.0f);
-    vec3 finalSpec = vec3(0.0f);
-    vec3 finalPointAmbient = vec3(0.0f);
-    vec3 finalSpotDiff = vec3(0.0f);
-    vec3 finalSpotSpec = vec3(0.0f);
-    vec3 finalSpotAmbient = vec3(0.0f);
+    color = vec4(0.0f);
 
-    for (int i = 0; i < numPointlights; i++) {
-        vec3 toLight = (inverseTransposeViewMatrixToFragment * vec4(pointlight[i].Position, 1.0f)).xyz - (inverseTransposeViewMatrixToFragment * vec4(vertexData.position, 1.0f)).xyz;
-        vec3 normalizedToLight = normalize(toLight);
-        float distanceToLight = length(toLight);
-        float pointAttenuation = 1.0f / (pointlight[i].ConstantAttenuation + pointlight[i].LinearAttenuation * distanceToLight + pointlight[i].QuadraticAttenuation * (distanceToLight * distanceToLight));
+    // BLOCK 1: Point Lights
+    for (int i = 0; i < NUMBER_OF_POINT_LIGHTS; i++) {
+        vec3 normalizedToPointLight = normalize(toPointLights[i]);
+        vec3 normalizedReflectedToPointLight = reflect(-normalizedToPointLight, normalizedNormal);
+        vec3 normalizedHalfwayDirection = normalize(normalizedToPointLight + normalizedToCamera);
 
-        finalPointAmbient += 0.1f * pointlight[i].Color * pointAttenuation;
+        float cosAlpha = getCosAngle(normalizedNormal, normalizedToPointLight);
 
-        float brightnessDiff = max(0.0f, dot(normalizedNormal, normalizedToLight));
-        finalDiff += (pointAttenuation * pointlight[i].Color * brightnessDiff * texture(diffTex, vertexData.textureCoord).rgb);
+        float cosBetaK = getCosAngleK(getCosAngle(normalizedReflectedToPointLight, normalizedToCamera));
+        float cosBetaK_Halfway = getCosAngleK(getCosAngle(normalizedHalfwayDirection, normalizedNormal));
 
-        vec3 reflectedToLight = reflect(-normalizedToLight, normalizedNormal);
-        float brightnessSpecular = max(0.0f, dot(reflectedToLight, normalizedToCamera));
-
-        finalSpec += pointAttenuation * pow(brightnessSpecular, shininess) * texture(specTex, vertexData.textureCoord).rgb * pointlight[i].Color;
+        color += vec4(brdf(diffTerm, specTerm, cosAlpha, cosBetaK_Halfway, pointLights[i].color, toPointLights[i]), 0.0f);
     }
 
-    for (int i = 0; i < numSpotlights; i++) {
-        vec3 toSpotLight = (inverseTransposeViewMatrixToFragment * vec4(spotlight[i].Position, 1.0f)).xyz - (inverseTransposeViewMatrixToFragment * vec4(vertexData.position, 1.0f)).xyz;
-        vec3 normalizedToSpotLight = normalize(toSpotLight);
-        vec3 normalizedSpotLightDirection = normalize(viewSpotLightDirection);
-        float distanceToSpot = length(toSpotLight);
-        float spotAttenuation = 1.0f / (spotlight[i].ConstantAttenuation + spotlight[i].LinearAttenuation * distanceToSpot + spotlight[i].QuadraticAttenuation * (distanceToSpot * distanceToSpot));
-        finalSpotAmbient += 0.1f * spotlight[i].Color * spotAttenuation;
+    // BLOCK 2: Spot Light
+    vec3 normalizedToSpotLight = normalize(toSpotLight);
+    vec3 normalizedReflectedToSpotLight = reflect(-normalizedToSpotLight, normalizedNormal);
+    vec3 normalizedSpotLightDirection = normalize(spotLightDirection);
 
-        float theta = dot(normalizedToSpotLight, normalize(-normalizedSpotLightDirection));
-        float epsilon = spotlight[i].InnerCone - spotlight[i].OuterCone;
-        float intensity = clamp((theta - spotlight[i].OuterCone) / epsilon, 0.0f, 1.0f);
-        float brightnessSpotDiff = max(dot(normalizedNormal, normalizedToSpotLight), 0.0f);
-        finalSpotDiff += spotAttenuation * brightnessSpotDiff * spotlight[i].Color * intensity * texture(diffTex, vertexData.textureCoord).rgb;
+    float cosTheta = getCosAngle(-normalizedToSpotLight, normalizedSpotLightDirection);
+    float cosEpsilon = spotLightInnerCone - spotLightOuterCone;
+    float intensity = clamp((cosTheta - spotLightOuterCone) / cosEpsilon, 0.0f, 1.0f);
+    float cosAlpha_Spot = getCosAngle(normalizedNormal, normalizedToSpotLight);
+    float cosBetaK_Spot = getCosAngleK(getCosAngle(normalizedReflectedToSpotLight, normalizedToCamera));
 
-        vec3 reflectedToSpotLight = reflect(-normalizedToSpotLight, normalizedNormal);
-        float brightnessSpotSpecular = max(0.0f, dot(reflectedToSpotLight, normalizedToCamera));
+    color += vec4(brdf(diffTerm, specTerm, cosAlpha_Spot, cosBetaK_Spot, spotLightColor, toSpotLight), 0.0f) * intensity;
 
-        finalSpotSpec += spotAttenuation * pow(brightnessSpotSpecular, shininess) * texture(specTex, vertexData.textureCoord).rgb * spotlight[i].Color;
-    }
-
-    vec3 result = emitColor * texture(emitTex, vertexData.textureCoord).rgb + finalPointAmbient + finalDiff + finalSpec + finalSpotDiff + finalSpotAmbient;
-    color = vec4(result.rgb, 1.0);
+    // Gamma "correction"
+    color += vec4(invgamma(texture(emitTex, vertexData.texCoord).rgb) * emitColor, 0.0f);
+    color.rgb = gamma(color.rgb);
 }

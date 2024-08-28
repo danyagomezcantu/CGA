@@ -1,4 +1,5 @@
 package cga.framework
+
 import cga.exercise.components.geometry.Material
 import cga.exercise.components.geometry.Mesh
 import cga.exercise.components.geometry.Renderable
@@ -146,7 +147,7 @@ object ModelLoader {
         // preprocessing rotation
         val rot = Matrix3f().rotateZ(roll).rotateY(yaw).rotateX(pitch)
         // create textures
-// default textures
+//default textures
         val ddata = BufferUtils.createByteBuffer(4)
         ddata.put(0.toByte()).put(0.toByte()).put(0.toByte()).put(0.toByte())
         ddata.flip()
@@ -157,7 +158,7 @@ object ModelLoader {
                 textures.add(Texture2D(objpath.substring(0, objpath.lastIndexOf('/') + 1) + model.textures[i], true))
             }
         }
-         materials
+        // materials
         for (i in model.materials.indices) {
             materials.add(Material(textures[model.materials[i].diffTexIndex],
                     textures[model.materials[i].emitTexIndex],
@@ -165,7 +166,7 @@ object ModelLoader {
                     model.materials[i].shininess,
                     Vector2f(1.0f, 1.0f)))
         }
-         meshes
+        // meshes
         for (i in model.meshes.indices) {
             meshes.add(Mesh(flattenVertexData(model.meshes[i].vertices, rot),
                     flattenIndexData(model.meshes[i].indices),

@@ -5,37 +5,30 @@ import cga.exercise.components.texture.Texture2D
 import org.joml.Vector2f
 import org.joml.Vector3f
 import org.joml.Vector3i
-import org.lwjgl.opengl.GL13
 
 class Material(
     var diff: Texture2D,
     var emit: Texture2D,
     var specular: Texture2D,
-    var shininess: Float = 50.0f,
-    var tcMultiplier: Vector2f = Vector2f(1.0f)
-) {
-    var emitColor = Vector3f(1f)
+    var shininess: Float = 20.0f,
+    var tcMultiplier: Vector2f = Vector2f(1.0f),
+    var emitColor: Vector3f = Vector3f (255f)
+){
 
     fun bind(shaderProgram: ShaderProgram) {
-        shaderProgram.use()
         shaderProgram.setUniform("tcMultiplier", tcMultiplier)
-        emit.bind(0)
-        shaderProgram.setUniform("emitTex", 0)
-        specular.bind(1)
-        shaderProgram.setUniform("diffTex", 1)
-        diff.bind(2)
+        diff.bind(0)
+        emit.bind(1)
+        specular.bind(2)
+        shaderProgram.setUniform("diffTex", 0)
+        shaderProgram.setUniform("emitTex", 1)
         shaderProgram.setUniform("specTex", 2)
         shaderProgram.setUniform("shininess", shininess)
-        shaderProgram.setUniform("emitColor", emitColor)
-    }
+        shaderProgram.setUniform("emitColor", Vector3f(emitColor).mul(1f/255f))
+        }
 
     fun unbind() {
         emit.unbind()
     }
-
-    fun cleanup() {
-        diff.cleanup()
-        emit.cleanup()
-        specular.cleanup()
-    }
 }
+

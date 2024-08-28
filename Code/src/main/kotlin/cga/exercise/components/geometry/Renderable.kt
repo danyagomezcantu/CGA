@@ -1,24 +1,20 @@
 package cga.exercise.components.geometry
 
 import cga.exercise.components.shader.ShaderProgram
+import org.joml.Matrix4f
+import org.joml.Vector3f
 
-class Renderable(
-    private val meshes: MutableList<Mesh>,
-    private val material: Material? = null
-) : Transformable(), IRenderable {
+class Renderable(val meshes: MutableList<Mesh>) : Transformable(), IRenderable {
 
-    override fun render(shaderProgram: ShaderProgram) {
-        shaderProgram.setUniform("model_matrix", getWorldModelMatrix())
-        material?.bind(shaderProgram)  // Bind material if available
-        for (mesh in meshes) {
-            mesh.render(shaderProgram)
+
+
+        override fun render(shaderProgram: ShaderProgram) {
+            for (mesh in meshes) {
+                shaderProgram.setUniform("model_matrix", getLocalModelMatrix(), false)
+                mesh.render(shaderProgram)
+            }
         }
     }
 
-    fun cleanup() {
-        for (mesh in meshes) {
-            mesh.cleanup()
-        }
-        material?.cleanup()
-    }
-}
+
+
